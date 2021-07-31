@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Text;
+using WechatPaySDK.Common;
 using WechatPaySDK.Security;
 
 namespace WechatPaySDK
@@ -34,6 +35,8 @@ namespace WechatPaySDK
         /// </summary>
         [JsonIgnore]
         public Dictionary<string, string> Headers { get; set; }
+        [JsonIgnore]
+        public ErrorInfo Error { get; set; }
         /// <summary>
         /// 指示本次请求是否成功
         /// </summary>
@@ -41,7 +44,7 @@ namespace WechatPaySDK
         public virtual bool Success()
         {
             bool res = this.StatusCode == HttpStatusCode.OK || this.StatusCode == HttpStatusCode.NoContent || this.StatusCode == HttpStatusCode.Accepted;
-            if (res && !VerifyResponseAsync(Headers, OriginalBody))
+            if (res && !VerifyResponse(Headers, OriginalBody))
             {
                 return false;
             }
@@ -52,20 +55,19 @@ namespace WechatPaySDK
             return res;
         }
         /// <summary>
-        /// 是否需要验证响应
+        /// 忽略签名验证
         /// </summary>
         /// <returns></returns>
-        protected virtual bool IsVerifyResponse()
+        protected virtual bool IgnoreSignature()
         {
-            return true;
+            return false;
         }
-        [JsonIgnore]
-        public ErrorInfo Error { get; set; }
-        private bool VerifyResponseAsync(Dictionary<string, string> headers, string body)
+
+        private bool VerifyResponse(Dictionary<string, string> headers, string body)
         {
-            if (!IsVerifyResponse())
+            if (IgnoreSignature())
             {
-                DiagnosticHelper.Write("WechatClient.Response.Verification", new { Message = "Current request is configured to ignore response signature verification" });
+                DiagnosticHelper.Write("WechatClient.Response.Verification", new DiagnosticModel { Message = "Current request is configured to ignore signature verification", Exception = null });
                 return true;
             }
             try
@@ -79,7 +81,7 @@ namespace WechatPaySDK
 
                 if (key == null)
                 {
-                    DiagnosticHelper.Write("WechatClient.Response.Verification", new { Message = "no keys matched" });
+                    DiagnosticHelper.Write("WechatClient.Response.Verification", new DiagnosticModel { Message = "no keys matched", Exception = null });
                     return false;
                 }
                 bool res = RSAUtils.VerifySign(signature, signMessage, key.PublicKey);
@@ -87,7 +89,7 @@ namespace WechatPaySDK
             }
             catch (Exception ex)
             {
-                DiagnosticHelper.Write("WechatClient.Response.Verification", ex);
+                DiagnosticHelper.Write("WechatClient.Response.Verification", new DiagnosticModel { Message = "exception", Exception = ex });
                 return false;
             }
         }

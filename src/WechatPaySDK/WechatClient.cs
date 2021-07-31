@@ -5,6 +5,8 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using WechatPaySDK.Common;
+using WechatPaySDK.Security;
 
 namespace WechatPaySDK
 {
@@ -84,9 +86,48 @@ namespace WechatPaySDK
                     return h;
                 });
                 result.Headers = headers;
-                DiagnosticHelper.Write("WechatClient.Execute", new { Message = logText.ToString() });
+                DiagnosticHelper.Write("WechatClient.Execute", new DiagnosticModel { Message = logText.ToString() });
                 return result;
             }
+        }
+
+        public static string BuildJsapiPayload(WechatAccount account, string appId, string prepayId)
+        {
+            long timestamp = DateTimeOffset.Now.ToUnixTimeSeconds();
+            var jsapiPackage = new SortedDictionary<string, string>(StringComparer.Ordinal);
+            jsapiPackage.Add("appId", appId);
+            jsapiPackage.Add("nonceStr", Guid.NewGuid().ToString("N"));
+            jsapiPackage.Add("package", "prepay_id=" + prepayId);
+            jsapiPackage.Add("signType", "MD5");
+            jsapiPackage.Add("timeStamp", timestamp.ToString());
+            StringBuilder signMessage = new StringBuilder();
+            jsapiPackage.Aggregate(signMessage, (sm, kv) => sm.Append(kv.Key).Append("=").Append(kv.Value).Append("&"));
+            signMessage.Append("key=").Append(account.MerchantSecret);
+            DiagnosticHelper.Write("BuildJsApiPayload", new DiagnosticModel { Message = signMessage.ToString() });
+            string sign = MD5Util.Encode(signMessage.ToString());
+            jsapiPackage.Add("paySign", sign.ToUpper());
+            string payload = JsonConvert.SerializeObject(jsapiPackage);
+            return payload;
+        }
+        public static string BuildAppPayload(WechatAccount account, string appId, string prepayId)
+        {
+            long timestamp = DateTimeOffset.Now.ToUnixTimeSeconds();
+
+            var appPayPackage = new SortedDictionary<string, string>(StringComparer.Ordinal);
+            appPayPackage.Add("appid", appId);
+            appPayPackage.Add("noncestr", Guid.NewGuid().ToString("N"));
+            appPayPackage.Add("package", "Sign=WXPay");
+            appPayPackage.Add("partnerid", account.MerchantId);
+            appPayPackage.Add("prepayid", prepayId);
+            appPayPackage.Add("timestamp", timestamp.ToString());
+            StringBuilder signMessage = new StringBuilder();
+            appPayPackage.Aggregate(signMessage, (b, kv) => b.Append(kv.Key).Append("=").Append(kv.Value).Append("&"));
+            signMessage.Append("key=").Append(account.MerchantSecret);
+            DiagnosticHelper.Write("BuildAppPayload", new DiagnosticModel { Message = signMessage.ToString() });
+            string sign = MD5Util.Encode(signMessage.ToString());
+            appPayPackage.Add("sign", sign);
+            string payload = JsonConvert.SerializeObject(appPayPackage);
+            return payload;
         }
     }
 }

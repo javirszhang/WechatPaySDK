@@ -13,23 +13,19 @@ namespace WechatPaySDK
     public sealed class WechatAccount
     {
 
-        private WechatAccount()
-        { }
-        public static WechatAccount GetConfig(string merchantId, string apiV3Key, string apiDomain, WechatKey merchantKey)
+        public WechatAccount()
         {
-            var config = new WechatAccount
-            {
-                MerchantId = merchantId,
-                ApiV3Key = apiV3Key,
-                ApiDomain = apiDomain
-            };
-            config.Keys.Add(merchantKey);
-            return config;
+            this.Apps = new List<WechatApp>();
+            this.Keys = new List<WechatKey>();
         }
         /// <summary>
         /// 商户号
         /// </summary>
         public string MerchantId { get; set; }
+        /// <summary>
+        /// 商户秘钥
+        /// </summary>
+        public string MerchantSecret { get; set; }
         /// <summary>
         /// APIv3的秘钥
         /// </summary>
@@ -39,9 +35,13 @@ namespace WechatPaySDK
         /// </summary>
         public string ApiDomain { get; set; }
         /// <summary>
+        /// 微信支付应用列表
+        /// </summary>
+        public List<WechatApp> Apps { get; set; }
+        /// <summary>
         /// 微信支付CA证书集合
         /// </summary>
-        public List<WechatKey> Keys { get; set; } = new List<WechatKey>();
+        public List<WechatKey> Keys { get; set; }
         private static readonly object lockObj = new object();
         public WechatKey GetPlatformKey(string serialNo = null)
         {
@@ -108,5 +108,43 @@ namespace WechatPaySDK
         /// 秘钥过期时间
         /// </summary>
         public DateTime? ExpireTime { get; set; }
+    }
+    public enum WechatAppType
+    {
+        /// <summary>
+        /// 公众号
+        /// </summary>
+        MP,
+        /// <summary>
+        /// 小程序
+        /// </summary>
+        Applet,
+        /// <summary>
+        /// APP
+        /// </summary>
+        App
+    }
+    public class WechatApp
+    {
+        /// <summary>
+        /// 应用名称
+        /// </summary>
+        public string Name { get; set; }
+        /// <summary>
+        /// 应用ID
+        /// </summary>
+        public string AppId { get; set; }
+        /// <summary>
+        /// 应用秘钥
+        /// </summary>
+        public string Secret { get; set; }
+        /// <summary>
+        /// 应用类型
+        /// </summary>
+        public string Type { get; set; }
+        /// <summary>
+        /// 是否默认
+        /// </summary>
+        public int IsDefault { get; set; }
     }
 }

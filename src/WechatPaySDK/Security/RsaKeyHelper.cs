@@ -18,7 +18,7 @@ namespace WechatPaySDK.Security
     /// <summary>
     /// RSA密钥帮助类
     /// </summary>
-    public class RsaKeyHelper
+    internal class RsaKeyHelper
     {
         /// <summary>
         /// RSA密钥帮助类

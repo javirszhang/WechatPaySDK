@@ -11,7 +11,7 @@ namespace WechatPaySDK.Response
     /// </summary>
     public partial class DownloadCertificatesResponse : WxPayResponseBase
     {
-        protected override bool IsVerifyResponse()
+        protected override bool IgnoreSignature()
         {
             Headers.TryGetValue("Wechatpay-Serial", out string serial_no);
             //如果是首次下载微信支付平台证书那么不验证相应值
